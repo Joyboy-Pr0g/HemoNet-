@@ -128,6 +128,4 @@ if __name__ == "__main__":
     print(f"Min    : {sample_tensor.min():.4f}")
     print(f"Max    : {sample_tensor.max():.4f}")
     print(f"Mean   : {sample_tensor.mean():.4f}")
-    print("[OK] Preprocessing pipeline working correctly.")
-
-    print("\n>>> Step a complete. Run step_c_data_split.py next.")
+    print("Preprocessing pipeline working correctly.")

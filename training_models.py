@@ -17,8 +17,8 @@ from dataset_preparation import (
 from models import CustomCNN, build_resnet50
 
 SEED       = 42
-MAX_EPOCHS = 150
-PATIENCE   = 15
+MAX_EPOCHS = 100
+PATIENCE   = 13
 RESNET_LR  = 0.01
 RESNET_BS  = 16
 CUSTOM_LR  = 0.001

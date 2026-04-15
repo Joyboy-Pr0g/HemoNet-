@@ -86,7 +86,7 @@ if __name__ == "__main__":
     dummy    = torch.randn(4, 3, 224, 224).to(device)
     out      = resnet_model(dummy)
     print(f"Output shape        : {out.shape}")
-    print(f"[OK] ResNet50 forward pass working.\n")
+    print(f"ResNet50 forward pass working.\n")
 
     custom_model     = CustomCNN().to(device)
     total_c          = sum(p.numel() for p in custom_model.parameters())
@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
     out2 = custom_model(dummy)
     print(f"Output shape        : {out2.shape}")
-    print(f"[OK] CustomCNN forward pass working.\n")
+    print(f"CustomCNN forward pass working.\n")
 
     print("=" * 50)
     print("COMPARISON SUMMARY")
