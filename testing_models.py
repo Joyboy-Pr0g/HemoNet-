@@ -21,9 +21,6 @@ from dataset_preparation import (
 )
 from models import CustomCNN, build_resnet50
 
-# ─────────────────────────────────────────────
-# CONFIGURATION
-# ─────────────────────────────────────────────
 SEED       = 42
 BATCH_SIZE = 16
 THRESHOLD  = 0.5
@@ -37,10 +34,6 @@ print(f"Device: {device}\n")
 os.makedirs("evaluation_results", exist_ok=True)
 os.makedirs("evaluation_results/misclassified", exist_ok=True)
 
-# ─────────────────────────────────────────────
-# TTA TRANSFORMS
-# 5 views per image — predictions averaged
-# ─────────────────────────────────────────────
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD  = [0.229, 0.224, 0.225]
 
@@ -64,9 +57,6 @@ def build_tta_transforms(img_size=IMG_SIZE):
 tta_transforms    = build_tta_transforms()
 val_test_transforms = build_val_test_transforms(IMG_SIZE)
 
-# ─────────────────────────────────────────────
-# LOAD TEST SPLIT
-# ─────────────────────────────────────────────
 test_df = pd.read_csv("split_test.csv")
 print(f"Test set: {len(test_df)} images")
 print(f"  Hemorrhage : {(test_df['hemorrhage']==1).sum()}")
@@ -76,9 +66,6 @@ test_dataset = HeadCTDataset(test_df, DATA_DIR, transform=val_test_transforms)
 test_loader  = DataLoader(test_dataset, batch_size=BATCH_SIZE,
                           shuffle=False, num_workers=0)
 
-# ─────────────────────────────────────────────
-# LOAD TRAINED MODELS
-# ─────────────────────────────────────────────
 resnet_model = build_resnet50().to(device)
 resnet_model.load_state_dict(
     torch.load("saved_models/ResNet50.pth", map_location=device))
@@ -92,10 +79,6 @@ custom_model.eval()
 print("[OK] CustomCNN loaded from saved_models/CustomCNN.pth\n")
 
 
-# ─────────────────────────────────────────────
-# STANDARD EVALUATION (no TTA)
-# Returns: all predictions, probabilities, true labels
-# ─────────────────────────────────────────────
 def evaluate_standard(model, loader):
     all_probs  = []
     all_preds  = []
@@ -116,10 +99,6 @@ def evaluate_standard(model, loader):
             np.array(all_labels))
 
 
-# ─────────────────────────────────────────────
-# TTA EVALUATION
-# For each image: average predictions across 5 transforms
-# ─────────────────────────────────────────────
 def evaluate_tta(model, df, img_dir, threshold=THRESHOLD):
     all_probs  = []
     all_labels = []
@@ -147,9 +126,6 @@ def evaluate_tta(model, df, img_dir, threshold=THRESHOLD):
     return all_probs, all_preds, all_labels
 
 
-# ─────────────────────────────────────────────
-# METRICS PRINTER
-# ─────────────────────────────────────────────
 def print_metrics(name, preds, labels, probs=None):
     cm        = confusion_matrix(labels, preds)
     tn, fp, fn, tp = cm.ravel()
@@ -180,9 +156,6 @@ def print_metrics(name, preds, labels, probs=None):
             "tp": tp, "tn": tn, "fp": fp, "fn": fn}
 
 
-# ─────────────────────────────────────────────
-# CONFUSION MATRIX PLOT
-# ─────────────────────────────────────────────
 def plot_confusion_matrix(labels, preds, model_name):
     cm  = confusion_matrix(labels, preds)
     fig, ax = plt.subplots(figsize=(5, 4))
@@ -198,9 +171,6 @@ def plot_confusion_matrix(labels, preds, model_name):
     print(f"  [OK] Confusion matrix saved to {path}")
 
 
-# ─────────────────────────────────────────────
-# ROC CURVE PLOT
-# ─────────────────────────────────────────────
 def plot_roc_curves(labels, resnet_probs, custom_probs):
     fpr_r, tpr_r, _ = roc_curve(labels, resnet_probs)
     fpr_c, tpr_c, _ = roc_curve(labels, custom_probs)
@@ -227,11 +197,6 @@ def plot_roc_curves(labels, resnet_probs, custom_probs):
     return auc_r, auc_c
 
 
-# ─────────────────────────────────────────────
-# THRESHOLD TUNING
-# Tests thresholds 0.3, 0.4, 0.5, 0.6, 0.7
-# Shows how accuracy and recall change
-# ─────────────────────────────────────────────
 def threshold_analysis(model_name, probs, labels):
     thresholds = [0.3, 0.4, 0.5, 0.6, 0.7]
     results    = []
@@ -281,10 +246,6 @@ def threshold_analysis(model_name, probs, labels):
     return results
 
 
-# ─────────────────────────────────────────────
-# CONFIDENCE ANALYSIS
-# Are wrong predictions high or low confidence?
-# ─────────────────────────────────────────────
 def confidence_analysis(model_name, probs, preds, labels):
     correct_mask   = (preds == labels)
     incorrect_mask = ~correct_mask
@@ -307,9 +268,6 @@ def confidence_analysis(model_name, probs, preds, labels):
             print(f"  ✓ All wrong predictions were low-confidence — model uncertain when wrong")
 
 
-# ─────────────────────────────────────────────
-# SAVE MISCLASSIFIED IMAGES
-# ─────────────────────────────────────────────
 def save_misclassified(model_name, df, probs, preds, labels, img_dir):
     folder = f"evaluation_results/misclassified/{model_name.replace(' ','_')}"
     os.makedirs(folder, exist_ok=True)
@@ -341,9 +299,6 @@ def save_misclassified(model_name, df, probs, preds, labels, img_dir):
     print(f"  [OK] {count} misclassified images saved to {folder}/")
 
 
-# ─────────────────────────────────────────────
-# RUN EVALUATION — RESNET50
-# ─────────────────────────────────────────────
 print("\n" + "="*55)
 print("EVALUATING: ResNet50")
 print("="*55)
@@ -359,9 +314,6 @@ print("\n  Running TTA evaluation...")
 r_tta_probs, r_tta_preds, _ = evaluate_tta(resnet_model, test_df, DATA_DIR)
 r_tta_metrics = print_metrics("ResNet50 — TTA (5 views)", r_tta_preds, r_labels)
 
-# ─────────────────────────────────────────────
-# RUN EVALUATION — CustomCNN
-# ─────────────────────────────────────────────
 print("\n" + "="*55)
 print("EVALUATING: CustomCNN")
 print("="*55)
@@ -377,17 +329,11 @@ print("\n  Running TTA evaluation...")
 c_tta_probs, c_tta_preds, _ = evaluate_tta(custom_model, test_df, DATA_DIR)
 c_tta_metrics = print_metrics("CustomCNN — TTA (5 views)", c_tta_preds, c_labels)
 
-# ─────────────────────────────────────────────
-# ROC CURVES — both models
-# ─────────────────────────────────────────────
 print("\n" + "="*55)
 print("ROC CURVES")
 print("="*55)
 auc_r, auc_c = plot_roc_curves(r_labels, r_probs, c_probs)
 
-# ─────────────────────────────────────────────
-# FINAL COMPARISON TABLE
-# ─────────────────────────────────────────────
 print("\n" + "="*65)
 print("FINAL COMPARISON — TEST SET RESULTS")
 print("="*65)
